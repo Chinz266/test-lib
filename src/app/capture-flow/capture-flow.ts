@@ -61,7 +61,7 @@ export class CaptureFlow {
     this.longitude.set(null);
     this.ocrResult.set('');
 
-    await this.getCurrentLocation();
+    this.getCurrentLocation();
 
     this.currentStep.set(3);
     await this.extractTextOrNumber(imageFile);
