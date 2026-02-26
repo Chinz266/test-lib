@@ -1,0 +1,19 @@
+<div style="max-width: 600px; margin: 40px auto; text-align: center; font-family: sans-serif;">
+  <h2>ถ่ายรูปหน้าปัดมิเตอร์น้ำ</h2>
+
+  <div style="margin: 30px 0;">
+    <label style="padding: 15px 30px; background-color: #28a745; color: white; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+      📸 เปิดกล้องถ่ายรูป
+      <input type="file" accept="image/*" capture="environment" (change)="onFileSelected($event)" style="display: none;">
+    </label>
+  </div>
+
+  <p style="color: #666; font-size: 0.9em; margin-bottom: 20px;">
+    * หากเปิดในคอมพิวเตอร์ จะเป็นการเลือกไฟล์รูปภาพแทน
+  </p>
+
+  <div *ngIf="selectedImage" style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+    <h3 style="margin-top: 0; color: #333;">รูปภาพที่ได้:</h3>
+    <img [src]="selectedImage" alt="Camera Preview" style="max-width: 100%; border-radius: 8px; border: 2px solid #ddd;">
+  </div>
+</div>

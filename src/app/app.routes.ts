@@ -11,4 +11,9 @@ export const routes: Routes = [
         loadComponent: () =>
             import('./read-img/read-img').then((module) => module.ReadImg),
     },
+    {
+        path: 'camera',
+        loadComponent: () =>
+            import('./camera/camera').then((module) => module.Camera),
+    },
 ];
