@@ -4,7 +4,7 @@ import { Component, Inject, PLATFORM_ID } from '@angular/core';
 
 @Component({
   selector: 'app-read-img',
-  standalone: true, // เพิ่ม standalone: true เข้าไปเพื่อให้เข้ากับ Angular โครงสร้างใหม่
+  standalone: true, 
   imports: [CommonModule],
   templateUrl: './read-img.html',
   styleUrl: './read-img.scss',
@@ -53,12 +53,19 @@ export class ReadImg {
       
       try {
         const Tesseract = await import('tesseract.js');
-        console.log('[OCR] tesseract module loaded');
+        console.log('[OCR] tesseract module loaded', Tesseract);
         
         const preprocessedCanvas = await this.preprocessImageForOcr(imageFile);
         console.log('[OCR] image preprocessing completed');
         
-        const worker = await Tesseract.createWorker('eng', 1, {
+        // 🌟 จุดที่ 1: ดึงฟังก์ชัน createWorker ออกมาให้ถูกที่ (แก้บั๊ก Vercel)
+        const createWorkerFn = Tesseract.createWorker || (Tesseract as any).default.createWorker;
+        
+        // 🌟 จุดที่ 2: ใช้ createWorkerFn และเติม CDN path กันไฟล์หายตอน Deploy
+        const worker = await createWorkerFn('eng', 1, {
+          workerPath: 'https://unpkg.com/tesseract.js@5.0.5/dist/worker.min.js',
+          langPath: 'https://raw.githubusercontent.com/naptha/tessdata/gh-pages/4.0.0',
+          corePath: 'https://unpkg.com/tesseract.js-core@5.0.0',
           logger: m => {
             this.statusText = m.status;
             if (m.status === 'recognizing text') {
@@ -71,7 +78,7 @@ export class ReadImg {
         await worker.setParameters({
           tessedit_char_whitelist: '0123456789',
           classify_bln_numeric_mode: '1',
-          tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE,
+          tessedit_pageseg_mode: (Tesseract.PSM || (Tesseract as any).default.PSM).SINGLE_LINE, // ดักจับเผื่อ PSM พังด้วย
           user_defined_dpi: '300',
           preserve_interword_spaces: '0'
         });
@@ -86,7 +93,7 @@ export class ReadImg {
         if (bestDigits.length < 4) {
           console.log('[OCR] primary result too short, running fallback pass');
           await worker.setParameters({
-            tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK
+            tessedit_pageseg_mode: (Tesseract.PSM || (Tesseract as any).default.PSM).SINGLE_BLOCK
           });
           const fallbackResult = await worker.recognize(imageFile);
           console.log('[OCR] fallback recognition completed', {

@@ -22,19 +22,23 @@ export class CaptureFlow {
 
   readonly ocrStatus = signal('ยังไม่เริ่มอ่านตัวเลข');
   readonly ocrResult = signal('');
+  readonly logs = signal<string[]>([]);
 
   async onFileSelected(event: Event): Promise<void> {
     const inputElement = event.currentTarget as HTMLInputElement;
     const files = inputElement.files;
 
     if (!files || files.length === 0) {
+      this.addLog('ยังไม่ได้เลือกรูปภาพ');
       return;
     }
 
     const file = files[0];
+    this.addLog(`เลือกรูปสำเร็จ: ${file.name} (${Math.round(file.size / 1024)} KB)`);
 
     this.selectedFileName.set(file.name);
     this.selectedImage.set(await this.convertToDataUrl(file));
+    this.addLog('แสดงพรีวิวรูปภาพสำเร็จ');
 
     await this.processImageFlow(file);
 
@@ -45,9 +49,12 @@ export class CaptureFlow {
     if (!isPlatformBrowser(this.platformId)) {
       this.locationStatus.set('ฟีเจอร์นี้ทำงานได้เฉพาะบน Browser');
       this.ocrStatus.set('ฟีเจอร์นี้ทำงานได้เฉพาะบน Browser');
+      this.addLog('ยกเลิกการประมวลผล: ไม่ใช่ Browser environment');
       return;
     }
 
+    this.logs.set([]);
+    this.addLog('เริ่ม workflow: Step 2 ดึงตำแหน่งปัจจุบัน -> Step 3 อ่าน OCR');
     this.isProcessing.set(true);
     this.currentStep.set(2);
     this.latitude.set(null);
@@ -60,13 +67,16 @@ export class CaptureFlow {
     await this.extractTextOrNumber(imageFile);
 
     this.isProcessing.set(false);
+    this.addLog('จบ workflow ทั้งหมด');
   }
 
   private async getCurrentLocation(): Promise<void> {
     this.locationStatus.set('กำลังดึงพิกัดปัจจุบัน...');
+    this.addLog('เริ่มดึงตำแหน่งปัจจุบันจากอุปกรณ์');
 
     if (!('geolocation' in navigator)) {
       this.locationStatus.set('อุปกรณ์นี้ไม่รองรับการดึงตำแหน่งปัจจุบัน');
+      this.addLog('อุปกรณ์ไม่รองรับ geolocation');
       return;
     }
 
@@ -82,30 +92,36 @@ export class CaptureFlow {
       this.latitude.set(position.coords.latitude);
       this.longitude.set(position.coords.longitude);
       this.locationStatus.set('ดึงตำแหน่งปัจจุบันสำเร็จ');
+      this.addLog(`ดึงตำแหน่งสำเร็จ: ${position.coords.latitude}, ${position.coords.longitude}`);
     } catch (error) {
       const geolocationError = error as GeolocationPositionError;
 
       if (geolocationError.code === geolocationError.PERMISSION_DENIED) {
         this.locationStatus.set('ไม่ได้รับอนุญาตให้เข้าถึงตำแหน่งปัจจุบัน');
+        this.addLog('ดึงตำแหน่งไม่สำเร็จ: ผู้ใช้ไม่อนุญาตสิทธิ์');
         return;
       }
 
       if (geolocationError.code === geolocationError.POSITION_UNAVAILABLE) {
         this.locationStatus.set('ไม่สามารถระบุตำแหน่งได้ในตอนนี้');
+        this.addLog('ดึงตำแหน่งไม่สำเร็จ: position unavailable');
         return;
       }
 
       if (geolocationError.code === geolocationError.TIMEOUT) {
         this.locationStatus.set('หมดเวลารอการดึงตำแหน่งปัจจุบัน');
+        this.addLog('ดึงตำแหน่งไม่สำเร็จ: timeout');
         return;
       }
 
       this.locationStatus.set('เกิดข้อผิดพลาดขณะดึงตำแหน่งปัจจุบัน');
+      this.addLog('ดึงตำแหน่งไม่สำเร็จ: unknown error');
     }
   }
 
   private async extractTextOrNumber(imageFile: File): Promise<void> {
     this.ocrStatus.set('กำลังอ่านตัวหนังสือ/ตัวเลขจากรูป...');
+    this.addLog('เริ่ม OCR จากรูปภาพ');
 
     try {
       const Tesseract = await import('tesseract.js');
@@ -115,8 +131,10 @@ export class CaptureFlow {
 
       this.ocrResult.set(numberOnly || rawText);
       this.ocrStatus.set(this.ocrResult() ? 'อ่านข้อมูลจากรูปสำเร็จ' : 'ไม่พบข้อความหรือตัวเลขที่ชัดเจน');
+      this.addLog(this.ocrResult() ? `OCR สำเร็จ: ${this.ocrResult()}` : 'OCR ไม่พบข้อความ/ตัวเลขที่ชัดเจน');
     } catch {
       this.ocrStatus.set('เกิดข้อผิดพลาดขณะอ่านข้อมูลจากรูป');
+      this.addLog('OCR เกิดข้อผิดพลาด');
     }
   }
 
@@ -136,5 +154,12 @@ export class CaptureFlow {
       reader.onerror = () => reject(new Error('Cannot read selected file'));
       reader.readAsDataURL(file);
     });
+  }
+
+  private addLog(message: string): void {
+    const timestamp = new Date().toLocaleTimeString('th-TH', { hour12: false });
+    const line = `[${timestamp}] ${message}`;
+    this.logs.update((entries) => [line, ...entries].slice(0, 12));
+    console.log('[CaptureFlow]', message);
   }
 }

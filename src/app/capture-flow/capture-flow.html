@@ -45,4 +45,15 @@
       <p style="margin: 0 0 0 16px; font-size: 1.1rem;"><strong>ผลลัพธ์:</strong> {{ ocrResult() }}</p>
     }
   </div>
+
+  @if (logs().length > 0) {
+    <div style="margin-top: 20px; text-align: left; border: 1px solid #ddd; border-radius: 8px; padding: 14px; background: #fafafa;">
+      <h3 style="margin: 0 0 10px; font-size: 1rem; color: #333;">Log การทำงาน</h3>
+      <ul style="margin: 0; padding-left: 18px; color: #444; font-size: 0.95rem;">
+        @for (logItem of logs(); track logItem) {
+          <li style="margin-bottom: 6px;">{{ logItem }}</li>
+        }
+      </ul>
+    </div>
+  }
 </main>
