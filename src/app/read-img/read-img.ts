@@ -4,6 +4,7 @@ import { Component, Inject, PLATFORM_ID } from '@angular/core';
 
 @Component({
   selector: 'app-read-img',
+  standalone: true, // เพิ่ม standalone: true เข้าไปเพื่อให้เข้ากับ Angular โครงสร้างใหม่
   imports: [CommonModule],
   templateUrl: './read-img.html',
   styleUrl: './read-img.scss',
@@ -53,6 +54,7 @@ export class ReadImg {
       try {
         const Tesseract = await import('tesseract.js');
         console.log('[OCR] tesseract module loaded');
+        
         const preprocessedCanvas = await this.preprocessImageForOcr(imageFile);
         console.log('[OCR] image preprocessing completed');
         
