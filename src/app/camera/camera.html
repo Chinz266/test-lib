@@ -12,8 +12,13 @@
     * หากเปิดในคอมพิวเตอร์ จะเป็นการเลือกไฟล์รูปภาพแทน
   </p>
 
-  <div *ngIf="selectedImage" style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+  @if (selectedImage()) {
+  <div style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
     <h3 style="margin-top: 0; color: #333;">รูปภาพที่ได้:</h3>
-    <img [src]="selectedImage" alt="Camera Preview" style="max-width: 100%; border-radius: 8px; border: 2px solid #ddd;">
+    @if (selectedFileName()) {
+    <p style="margin: 0 0 12px; color: #555; font-size: 0.95rem;">ไฟล์: {{ selectedFileName() }}</p>
+    }
+    <img [src]="selectedImage()" alt="Camera Preview" style="max-width: 100%; border-radius: 8px; border: 2px solid #ddd;">
   </div>
+  }
 </div>
