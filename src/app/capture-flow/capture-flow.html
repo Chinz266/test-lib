@@ -1,0 +1,48 @@
+<main style="max-width: 700px; margin: 40px auto; font-family: sans-serif; text-align: center;">
+  <h2>Workflow อ่านข้อมูลจากรูป</h2>
+  <p style="margin-top: 6px; color: #555;">
+    ขั้นตอน: 1) ถ่ายรูป 2) ดึง Location ปัจจุบัน 3) ดึงตัวหนังสือ/ตัวเลข
+  </p>
+
+  <div style="margin: 24px 0;">
+    <label style="padding: 14px 28px; background: #2f7ff7; color: #fff; border-radius: 8px; cursor: pointer; font-weight: 600;">
+      📸 ถ่ายรูป / เลือกรูป
+      <input
+        type="file"
+        accept="image/*"
+        capture="environment"
+        (change)="onFileSelected($event)"
+        [disabled]="isProcessing()"
+        style="display: none;"
+      >
+    </label>
+  </div>
+
+  @if (selectedFileName()) {
+    <p style="margin: 8px 0 16px; color: #555;">ไฟล์: {{ selectedFileName() }}</p>
+  }
+
+  @if (selectedImage()) {
+    <div style="padding: 16px; border: 1px solid #ddd; border-radius: 8px; background: #f8f9fa;">
+      <img [src]="selectedImage()" alt="Captured image preview" style="max-width: 100%; border-radius: 8px;">
+    </div>
+  }
+
+  <div style="margin-top: 20px; text-align: left; border: 1px solid #e1e1e1; border-radius: 8px; padding: 16px;">
+    <p style="margin: 0 0 8px;"><strong>Step 1:</strong> ถ่ายรูป/เลือกรูป @if (currentStep() === 1) {<span> (กำลังรอ)</span>} @else {<span> ✅</span>}</p>
+    <p style="margin: 0 0 8px;"><strong>Step 2:</strong> ดึง Location ปัจจุบันจากอุปกรณ์</p>
+    <p style="margin: 0 0 8px 16px; color: #555;">สถานะ: {{ locationStatus() }}</p>
+
+    @if (latitude() !== null && longitude() !== null) {
+      <p style="margin: 0 0 8px 16px;">Latitude: {{ latitude() }}</p>
+      <p style="margin: 0 0 8px 16px;">Longitude: {{ longitude() }}</p>
+    }
+
+    <p style="margin: 8px 0 8px;"><strong>Step 3:</strong> ดึงตัวหนังสือหรือตัวเลขจากรูป</p>
+    <p style="margin: 0 0 8px 16px; color: #555;">สถานะ: {{ ocrStatus() }}</p>
+
+    @if (ocrResult()) {
+      <p style="margin: 0 0 0 16px; font-size: 1.1rem;"><strong>ผลลัพธ์:</strong> {{ ocrResult() }}</p>
+    }
+  </div>
+</main>

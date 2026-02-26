@@ -2,6 +2,11 @@ import { Routes } from '@angular/router';
 
 export const routes: Routes = [
     {
+        path: '',
+        loadComponent: () =>
+            import('./capture-flow/capture-flow').then((module) => module.CaptureFlow),
+    },
+    {
         path: 'location',
         loadComponent: () =>
             import('./location/location').then((module) => module.LocationPage),
