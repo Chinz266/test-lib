@@ -128,11 +128,21 @@ export class CaptureFlow {
       const preprocessedCanvas = await this.preprocessImageForOcr(imageFile);
       this.addLog('เตรียมภาพสำหรับ OCR สำเร็จ');
 
-      const worker = await Tesseract.createWorker('eng', 1);
+      // 🌟 1. ดึงฟังก์ชัน createWorker และ PSM ออกมาแก้บั๊ก Vercel (Vite)
+      const createWorkerFn = Tesseract.createWorker || (Tesseract as any).default.createWorker;
+      const PSM = Tesseract.PSM || (Tesseract as any).default.PSM;
+
+      // 🌟 2. เรียกใช้ createWorkerFn พร้อมใส่ CDN ป้องกันไฟล์หาย
+      const worker = await createWorkerFn('eng', 1, {
+        workerPath: 'https://unpkg.com/tesseract.js@5.0.5/dist/worker.min.js',
+        langPath: 'https://raw.githubusercontent.com/naptha/tessdata/gh-pages/4.0.0',
+        corePath: 'https://unpkg.com/tesseract.js-core@5.0.0',
+      });
+
       await worker.setParameters({
         tessedit_char_whitelist: '0123456789',
         classify_bln_numeric_mode: '1',
-        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE,
+        tessedit_pageseg_mode: PSM.SINGLE_LINE, // ใช้ PSM ที่เราดึงมาใหม่
         user_defined_dpi: '300',
         preserve_interword_spaces: '0'
       });
@@ -142,7 +152,7 @@ export class CaptureFlow {
 
       if (bestDigits.length < 4) {
         await worker.setParameters({
-          tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK
+          tessedit_pageseg_mode: PSM.SINGLE_BLOCK // ใช้ PSM ที่เราดึงมาใหม่
         });
         const fallbackResult = await worker.recognize(imageFile);
         const fallbackDigits = this.extractBestDigits(fallbackResult.data.text);
@@ -157,7 +167,9 @@ export class CaptureFlow {
       this.ocrResult.set(bestDigits);
       this.ocrStatus.set(this.ocrResult() ? 'อ่านข้อมูลจากรูปสำเร็จ' : 'ไม่พบข้อความหรือตัวเลขที่ชัดเจน');
       this.addLog(this.ocrResult() ? `OCR สำเร็จ: ${this.ocrResult()}` : 'OCR ไม่พบข้อความ/ตัวเลขที่ชัดเจน');
-    } catch {
+    } catch (error) {
+      // 🌟 3. ปริ้นต์ Error ออกมาที่ Console ด้วย จะได้รู้ว่าพังเพราะอะไรถ้าเกิดปัญหาอีก
+      console.error("🚨 รายละเอียด OCR Error:", error); 
       this.ocrStatus.set('เกิดข้อผิดพลาดขณะอ่านข้อมูลจากรูป');
       this.addLog('OCR เกิดข้อผิดพลาด');
     }
