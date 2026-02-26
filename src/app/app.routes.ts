@@ -1,3 +1,14 @@
 import { Routes } from '@angular/router';
 
-export const routes: Routes = [];
+export const routes: Routes = [
+    {
+        path: 'location',
+        loadComponent: () =>
+            import('./location/location').then((module) => module.LocationPage),
+    },
+    {
+        path: 'read-img',
+        loadComponent: () =>
+            import('./read-img/read-img').then((module) => module.ReadImg),
+    },
+];

@@ -1,0 +1,56 @@
+<main style="max-width: 600px; margin: 40px auto; font-family: sans-serif; text-align: center;">
+  <h2>ดึงพิกัด GPS จากรูปถ่าย (EXIF)</h2>
+
+  <div style="margin: 16px 0;">
+    <button
+      type="button"
+      (click)="getCurrentLocation()"
+      [disabled]="isProcessing"
+      style="padding: 10px 18px; border: 1px solid #333; border-radius: 6px; background: #fff; cursor: pointer;">
+      ดึงตำแหน่งปัจจุบัน
+    </button>
+  </div>
+
+  <!-- <div style="margin: 20px 0;">
+    <input type="file" accept="image/*" (change)="onFileSelected($event)" [disabled]="isProcessing">
+  </div> -->
+
+  <div *ngIf="selectedImage" style="margin-top: 15px;">
+    <img [src]="selectedImage" alt="Preview" style="max-width: 100%; max-height: 300px; border-radius: 8px; border: 1px solid #ccc;">
+  </div>
+
+  <div style="margin-top: 20px;">
+    <p [style.color]="isProcessing ? '#007bff' : '#555'">
+      <strong>สถานะ:</strong> {{ locationStatus }}
+    </p>
+  </div>
+
+  <div style="margin-top: 10px; padding: 12px; border: 1px dashed #bbb; border-radius: 8px; background: #fff;">
+    <p style="margin: 4px 0;"><strong>Lat:</strong> {{ latitude !== null ? latitude : '-' }}</p>
+    <p style="margin: 4px 0;"><strong>Long:</strong> {{ longitude !== null ? longitude : '-' }}</p>
+  </div>
+
+  <div *ngIf="latitude !== null && longitude !== null" style="margin-top: 20px; padding: 20px; background: #e9ecef; border-radius: 8px;">
+    <h3 style="margin: 0 0 10px 0; color: #333;">พิกัดที่ดึงได้:</h3>
+    
+    <p style="font-size: 1.2rem; margin: 5px 0;">
+      <strong>Latitude:</strong> <span style="color: #d9534f;">{{ latitude }}</span>
+    </p>
+    <p style="font-size: 1.2rem; margin: 5px 0;">
+      <strong>Longitude:</strong> <span style="color: #d9534f;">{{ longitude }}</span>
+    </p>
+    
+    <a [href]="'https://www.google.com/maps/search/?api=1&query=' + latitude + ',' + longitude" 
+       target="_blank" 
+       style="display: inline-block; margin-top: 15px; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+      📍 เปิดดูใน Google Maps
+    </a>
+  </div>
+
+  <div *ngIf="logs.length > 0" style="margin-top: 20px; padding: 14px; text-align: left; border: 1px solid #ddd; border-radius: 8px; background: #fafafa;">
+    <h3 style="margin: 0 0 8px 0; font-size: 1rem; color: #333;">Log บนหน้า</h3>
+    <ul style="margin: 0; padding-left: 18px; color: #444; font-size: 0.95rem;">
+      <li *ngFor="let logItem of logs">{{ logItem }}</li>
+    </ul>
+  </div>
+</main>
