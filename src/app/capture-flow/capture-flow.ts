@@ -125,17 +125,92 @@ export class CaptureFlow {
 
     try {
       const Tesseract = await import('tesseract.js');
-      const result = await Tesseract.recognize(imageFile, 'eng');
-      const rawText = result.data.text.trim();
-      const numberOnly = rawText.replace(/\D/g, '');
+      const preprocessedCanvas = await this.preprocessImageForOcr(imageFile);
+      this.addLog('เตรียมภาพสำหรับ OCR สำเร็จ');
 
-      this.ocrResult.set(numberOnly || rawText);
+      const worker = await Tesseract.createWorker('eng', 1);
+      await worker.setParameters({
+        tessedit_char_whitelist: '0123456789',
+        classify_bln_numeric_mode: '1',
+        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE,
+        user_defined_dpi: '300',
+        preserve_interword_spaces: '0'
+      });
+
+      const primaryResult = await worker.recognize(preprocessedCanvas);
+      let bestDigits = this.extractBestDigits(primaryResult.data.text);
+
+      if (bestDigits.length < 4) {
+        await worker.setParameters({
+          tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK
+        });
+        const fallbackResult = await worker.recognize(imageFile);
+        const fallbackDigits = this.extractBestDigits(fallbackResult.data.text);
+
+        if (fallbackDigits.length > bestDigits.length) {
+          bestDigits = fallbackDigits;
+        }
+      }
+
+      await worker.terminate();
+
+      this.ocrResult.set(bestDigits);
       this.ocrStatus.set(this.ocrResult() ? 'อ่านข้อมูลจากรูปสำเร็จ' : 'ไม่พบข้อความหรือตัวเลขที่ชัดเจน');
       this.addLog(this.ocrResult() ? `OCR สำเร็จ: ${this.ocrResult()}` : 'OCR ไม่พบข้อความ/ตัวเลขที่ชัดเจน');
     } catch {
       this.ocrStatus.set('เกิดข้อผิดพลาดขณะอ่านข้อมูลจากรูป');
       this.addLog('OCR เกิดข้อผิดพลาด');
     }
+  }
+
+  private async preprocessImageForOcr(imageFile: File): Promise<HTMLCanvasElement> {
+    const imageBitmap = await createImageBitmap(imageFile);
+    const scaleFactor = 2;
+    const canvas = document.createElement('canvas');
+    canvas.width = imageBitmap.width * scaleFactor;
+    canvas.height = imageBitmap.height * scaleFactor;
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      imageBitmap.close();
+      throw new Error('Cannot create 2D context for OCR preprocessing');
+    }
+
+    context.drawImage(imageBitmap, 0, 0, canvas.width, canvas.height);
+    imageBitmap.close();
+
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imageData.data;
+    const contrastFactor = 1.5;
+    const threshold = 160;
+
+    for (let pixelIndex = 0; pixelIndex < pixels.length; pixelIndex += 4) {
+      const red = pixels[pixelIndex];
+      const green = pixels[pixelIndex + 1];
+      const blue = pixels[pixelIndex + 2];
+      const luminance = 0.299 * red + 0.587 * green + 0.114 * blue;
+      const contrastedLuminance = Math.max(
+        0,
+        Math.min(255, (luminance - 128) * contrastFactor + 128)
+      );
+      const binaryValue = contrastedLuminance > threshold ? 255 : 0;
+
+      pixels[pixelIndex] = binaryValue;
+      pixels[pixelIndex + 1] = binaryValue;
+      pixels[pixelIndex + 2] = binaryValue;
+    }
+
+    context.putImageData(imageData, 0, 0);
+    return canvas;
+  }
+
+  private extractBestDigits(rawText: string): string {
+    const groupedCandidates = rawText.match(/\d{4,}/g) ?? [];
+    if (groupedCandidates.length > 0) {
+      return groupedCandidates.sort((left, right) => right.length - left.length)[0] ?? '';
+    }
+
+    return rawText.replace(/\D/g, '');
   }
 
   private convertToDataUrl(file: File): Promise<string> {
