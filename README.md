@@ -36,6 +36,18 @@ ng build
 
 This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
 
+For production build with detailed logs:
+
+```bash
+npm run build:production
+```
+
+For production deploy (build + run server) with logs:
+
+```bash
+npm run deploy:production
+```
+
 ## Running unit tests
 
 To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:

@@ -6,6 +6,7 @@
     "start": "ng serve",
     "build": "ng build",
     "build:production": "ng build --configuration production --verbose",
+    "deploy:production": "npm run build:production && node dist/test-lib/server/server.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:test-lib": "node dist/test-lib/server/server.mjs"
